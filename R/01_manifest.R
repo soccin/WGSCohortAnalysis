@@ -186,10 +186,27 @@ build_cohort <- function(snv_manifest = NULL, sv_manifest = NULL, require_both =
   only_sv <- setdiff(sv$Sample, snv$Sample)
   if (!is.null(snv_manifest) && !is.null(sv_manifest) &&
       (length(only_snv) > 0 || length(only_sv) > 0)) {
-    msg <- str_glue(
-      "SNV/SV manifests differ: {length(only_snv)} SNV-only, {length(only_sv)} SV-only tumors"
+    detail <- c(
+      if (length(only_snv) > 0) c(
+        str_glue("{length(only_snv)} tumor(s) in the SNV manifest with no SV row:"),
+        str_c("    ", wca_truncate_list(only_snv))),
+      if (length(only_sv) > 0) c(
+        str_glue("{length(only_sv)} tumor(s) in the SV manifest with no SNV row:"),
+        str_c("    ", wca_truncate_list(only_sv)))
     )
-    if (require_both) wca_abort("{msg} (require_both = TRUE)") else wca_msg("  NOTE: {msg}")
+    if (require_both) {
+      wca_stop_user(
+        "SNV and SV manifests do not cover the same tumors",
+        detail = detail,
+        fix = c(
+          "add the missing rows to the manifest named under `manifests:` in 00.PARAMS.yml",
+          "drop those tumors with `cohort: exclude_tid_regex:` in 00.PARAMS.yml",
+          "set `cohort: require_both: false` to keep them with one assay only"
+        )
+      )
+    }
+    wca_msg("  NOTE: SNV and SV manifests do not cover the same tumors")
+    wca_msg_lines(detail, indent = "    ")
   }
 
   full_join(snv, sv, by = "Sample") |>

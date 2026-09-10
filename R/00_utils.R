@@ -71,6 +71,53 @@ wca_abort <- function(..., .envir = parent.frame()) {
   rlang::abort(as.character(str_glue(..., .envir = .envir)), class = "wca_error")
 }
 
+#' Truncate a long character vector for display
+#'
+#' @param x Character vector.
+#' @param n Show at most this many elements.
+#' @return `x` when it is short enough, otherwise the first `n` elements
+#'   followed by a line counting the rest.
+wca_truncate_list <- function(x, n = 20) {
+  if (length(x) <= n) return(as.character(x))
+  c(as.character(x[seq_len(n)]), as.character(str_glue("... and {length(x) - n} more")))
+}
+
+#' Stop on a condition a person fixes, without an R backtrace
+#'
+#' For a bad manifest or a bad parameter, as opposed to a bug in the
+#' toolkit. `wca_abort()` is the one to use for the latter, where the call
+#' stack is the point. Here the stack is noise: the fix is to edit a file,
+#' so the message names what is wrong, which samples are involved, and what
+#' to do, then exits with status 1.
+#'
+#' Quitting is skipped in an interactive session and under `testthat`, where
+#' a `wca_user_error` condition is signalled instead so the error can be
+#' caught and the session survives.
+#'
+#' @param headline One line naming what is wrong; `stringr::str_glue()`
+#'   interpolated in the caller.
+#' @param detail Lines describing the specifics, such as the samples at
+#'   fault. Not interpolated: build them with `str_glue()` if needed.
+#' @param fix Lines listing what a person can do about it, shown as bullets.
+#' @param .envir Environment for glue interpolation of `headline`.
+wca_stop_user <- function(headline, detail = character(), fix = character(),
+                          .envir = parent.frame()) {
+  headline <- as.character(str_glue(headline, .envir = .envir))
+  lines <- c(
+    "",
+    str_c("ERROR: ", headline),
+    if (length(detail) > 0) c("", str_c("  ", detail)),
+    if (length(fix) > 0) c("", "  Fix by one of:", str_c("    - ", fix)),
+    ""
+  )
+  msg <- str_c(lines, collapse = "\n")
+  if (!interactive() && !identical(Sys.getenv("TESTTHAT"), "true")) {
+    cat(msg, "\n", sep = "", file = stderr())
+    quit(save = "no", status = 1)
+  }
+  rlang::abort(msg, class = c("wca_user_error", "wca_error"), call = NULL)
+}
+
 #' Warn with a toolkit-prefixed message
 #'
 #' @inheritParams wca_abort
@@ -87,6 +134,20 @@ wca_warn <- function(..., .envir = parent.frame()) {
 wca_msg <- function(..., .envir = parent.frame()) {
   if (isTRUE(getOption("wca.quiet", FALSE))) return(invisible())
   cat(as.character(str_glue(..., .envir = .envir)), "\n", sep = "")
+  invisible()
+}
+
+#' Print lines verbatim as progress output
+#'
+#' The companion to `wca_msg()` for text that is already assembled and must
+#' not go through glue, such as a list of sample names. Respects
+#' `options(wca.quiet = TRUE)`.
+#'
+#' @param lines Character vector, one line each.
+#' @param indent String prepended to every line.
+wca_msg_lines <- function(lines, indent = "  ") {
+  if (isTRUE(getOption("wca.quiet", FALSE)) || length(lines) == 0) return(invisible())
+  cat(str_c(indent, lines, collapse = "\n"), "\n", sep = "")
   invisible()
 }
 

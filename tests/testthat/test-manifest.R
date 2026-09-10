@@ -301,7 +301,12 @@ test_that("build_cohort resolves dirs and flags, and enforces symmetry", {
   expect_equal(coh$snv_dir, coh$sv_dir)
 
   sc <- scan_tempo_outputs(fixture_root())
-  expect_error(build_cohort(sc$snv, sc$sv[-1, ], require_both = TRUE), "differ")
+  dropped <- sc$sv$TID[[1]]
+  err <- expect_error(build_cohort(sc$snv, sc$sv[-1, ], require_both = TRUE),
+    class = "wca_user_error")
+  expect_match(conditionMessage(err), "do not cover the same tumors")
+  expect_match(conditionMessage(err), dropped, fixed = TRUE)
+  expect_match(conditionMessage(err), "require_both", fixed = TRUE)
   asym <- build_cohort(sc$snv, sc$sv[-1, ], require_both = FALSE)
   expect_equal(sum(!asym$has_sv), 1)
   only_snv <- build_cohort(sc$snv, NULL)
