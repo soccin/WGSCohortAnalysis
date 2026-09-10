@@ -1,0 +1,25 @@
+# Patient data never enters this repository. The manifests name samples and
+# their Tempo files, so they live beside a clone, never inside one.
+tempo*Manifest*.csv
+manifestUpdate_*.csv
+manifestUpdate_*.md
+data/raw/
+
+# Run axis outputs (analysis projects created from templates/project)
+cache/
+results/*/figures/
+
+# R artifacts
+*.rds
+.Rhistory
+_Rhistory_*
+.RData
+.Rproj.user/
+
+# Editor and OS noise
+._*
+.DS_Store
+*~
+
+# Scratch
+tmp/

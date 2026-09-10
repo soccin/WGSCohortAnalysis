@@ -1,0 +1,81 @@
+# CLAUDE.md
+
+Notes for working on this repository. `README.md` is the reference,
+`QUICKSTART.md` is the path from nothing to a cohort report.
+
+## Patient data never enters git
+
+The manifests name samples, and every workbook and figure derived from them
+carries those names. None of it goes into a commit, a commit message, an
+issue, or anything sent off the machine. Project numbers are de-identified
+and are fine. Both shipped `.gitignore` files enforce this: the toolkit
+ignores manifests and `data/raw/`, the project template ignores all of
+`data/` except its README and all of `results/`.
+
+Keep the manifests beside a clone, never inside one.
+
+## What this is
+
+A sourced R toolkit, not an R package. There is no `DESCRIPTION`, so
+`testthat::test_local()` and `devtools::*` do not work here.
+
+```
+Rscript tests/run_tests.R          # unit tests + an end-to-end run on fixtures
+WCA_SKIP_E2E=1 Rscript tests/run_tests.R   # unit tests only, much faster
+```
+
+Load it with `source(file.path(Sys.getenv("WCA_HOME"), "load.R"))`, which
+attaches the dependencies, sources `R/*.R` in name order and sets
+`wca.home`. Nothing in `R/` has top-level side effects.
+
+```
+load.R        wca_load()
+R/            00 utils, 01-06 manifests/paths/readers, 10 cache, 20-21 genome
+              and cn_call, 22-24 events/recurrence/burden, 30-31 plots and
+              BED, 40-41 xlsx writer and dictionary, 50 params and run axis
+scripts/      the six pipeline stages, run against a project
+bin/          wcaNewProject.R, wcaUpdateManifests.R
+templates/    project scaffold copied by wcaNewProject.R
+tests/        run_tests.R, testthat/, fixtures/miniCohort (renamed cell lines)
+docs/         DATA_MODEL, METHODS, TEMPO_OUTPUT, CONSOLIDATION,
+              CUSTOM_ANALYSIS, QUARTO_LINUX_INSTALL
+```
+
+An analysis is one folder: a fresh clone of this toolkit with the project
+directory beside it, so nothing points outside that folder and the clone
+records which toolkit produced the results.
+
+## Rules that are easy to get wrong
+
+- **CNV is autosomes-only.** Every CNV event, summary and plot drops X and Y
+  through `filter_autosomes()`, because FACETS X calls are not sex-aware.
+  Do not "fix" this. See `docs/METHODS.md`.
+- **Sample identity is the tumor id.** `TID` in the manifests, `Sample` in
+  the cohort table, with `NID` alongside. Manifest merges key on `TID`.
+- **There are two manifests** because SNV and SV output can come from
+  different Tempo runs. Expect them to disagree; the update report flags
+  tumors that changed in only one.
+- **Denominators are explicit.** `n_samples` for SNV and SV,
+  `n_cnv_samples` (FACETS QC pass) for CNV.
+- **Duplicate manifest rows.** `apply_cohort_rules()` collapses rows with
+  the same md5 when the cohort is built. `--dedup` cleans the manifest
+  itself and keeps the copy under `out/`, where Tempo writes. Rows with the
+  same tumor but *different* md5 are reported, never resolved: that is a
+  person's decision.
+- **Chromosomes are unprefixed**, with FACETS 23/24 mapped to X/Y.
+
+## Conventions
+
+Tidyverse first: dplyr verbs, purrr over the apply family, the base pipe,
+stringr and glue for strings, fs for paths, readr with
+`show_col_types = FALSE`. Roxygen on every function. No trailing
+whitespace.
+
+Match the surrounding code. Add tests with a feature, and run the suite
+before proposing a commit.
+
+## Git
+
+Work on a short-lived branch (`feat/manifest-dedup-01`), merge to master.
+Commit only when asked. Draft the message in `/tmp` for review first: 50
+character subject, 72 character body, no emoji.

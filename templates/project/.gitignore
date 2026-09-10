@@ -1,0 +1,13 @@
+# Patient data stays on the filesystem. The manifests name samples and
+# their Tempo files, and every workbook and figure derived from them
+# carries sample identifiers, so none of it is ever committed.
+data/*
+!data/README.md
+results/
+
+cache/
+*.rds
+.Rhistory
+_Rhistory_*
+._*
+.DS_Store

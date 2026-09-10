@@ -1,0 +1,3 @@
+	Status	Reason
+CL02	pass	Passed Tempo Criteria
+CL02N	pass	Passed Tempo Criteria

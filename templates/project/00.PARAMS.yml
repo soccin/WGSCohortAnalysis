@@ -1,0 +1,45 @@
+# 00.PARAMS.yml -- WGSCohortAnalysis project parameters
+#
+# Layout follows https://github.com/soccin/r-proj-org: this file at the
+# project root, stage outputs in cache/<run>/, deliverables in results/<run>/.
+# The parsed-file cache lives in cache/reads/ (outside the run axis) because
+# it is shared by every run.
+
+run: run01                              # run name: cache/<run>/, results/<run>/
+toolkit: /path/to/WGSCohortAnalysis     # filled in by wcaNewProject.R; WCA_HOME wins
+prefix: wca                             # output file prefix
+genome: hg19                            # only hg19 bundled for now
+
+manifests:                              # CSV: TID,NID,ProjNo,PATH,Sig
+  snv: data/raw/tempoSNVManifest.csv    # PATH = *.somatic.final.maf
+  sv:  data/raw/tempoSVManifest.csv     # PATH = *.final.bedpe
+
+cohort:
+  projects_file: null                   # optional xlsx with Project, Ucode columns
+  include_ucode: []                     # keep these Ucode values from projects_file
+  include_projects: []                  # explicit ProjNo list (union with projects_file)
+  exclude_tid_regex: null               # e.g. "_CL|CG-AML"
+  require_both: true                    # SNV and SV tumor sets must match
+
+snv:
+  keep_5p_flank: [TERT]                 # genes whose 5'Flank rows survive the non-silent filter
+  min_t_alt_count: 0
+  min_t_depth: 0
+  min_vaf: 0
+
+cnv:
+  max_abs_diplogr: 1.5                  # FACETS gate: exclude |dipLogR| above this
+  require_facets_qc: false              # also exclude facets_qc == FALSE
+  autosomes_only: true                  # keep true: FACETS X/Y calls are not sex-aware (see docs/METHODS.md)
+  drop_diploid: true
+  diploid_rule: state                   # state = cn_state != DIPLOID; tcn = tcn != 2 (260719 rule)
+  call_preset: facets                   # facets | strict | tcn | focal (see docs/METHODS.md)
+  arm_min_frac: 0.5                     # arm counts as altered above this frac_of_arm
+
+sv:
+  min_callers_pass: 0                   # 0 = no filter (prior reports); 2 = medium confidence
+
+report:
+  pct_cutoff: {snv: 0.10, sv: 0.10, cnv: 0.40}
+  genes_of_interest: []                 # exact symbols, e.g. [IKZF2, ETV6, TP53]
+  top_n_oncoprint: 40
