@@ -1,6 +1,6 @@
 # Custom analyses with the toolkit
 
-Three worked examples that use the readers and summaries directly rather
+Four worked examples that use the readers and summaries directly rather
 than the standard pipeline. Each starts from a loaded toolkit:
 
 ```r
@@ -104,6 +104,41 @@ write_report_xlsx(list(Samples = per_sample, RecurrentSV = pairs, SV = sv_aptl),
 The `Samples` sheet and the `(denominator)` line in DataDictionary make it
 explicit that PCT is relative to the subset, which the original one-off did
 not record.
+
+## 4. Events shared by cell lines and patients (from NKCohort/report01_sharedSV.R)
+
+Genes hit by an SV in every cell line and in at least one patient, and the
+full ranking of genes hit in at least one patient when nothing is shared by
+all. `group_recurrence()` counts samples per gene within each named group;
+the questions are then filters on its output.
+
+```r
+cohort <- stage_load(PARAMS, "01_cohort", "cohort")
+svg <- stage_load(PARAMS, "03_events", "svg")
+sv <- stage_load(PARAMS, "03_events", "sv")
+
+groups <- list(
+  CellLine = cohort |> filter(str_detect(Sample, "_CL_D")) |> pull(Sample),
+  Patient = cohort |> filter(!str_detect(Sample, "_CL_D")) |> pull(Sample)
+)
+n_cl <- length(groups$CellLine)
+
+sv_genes <- group_recurrence(svg, groups, detail_cols = "sv_class")
+shared <- sv_genes |> filter(n_CellLine == n_cl, n_Patient >= 1)
+ranked <- sv_genes |> filter(n_Patient >= 1)          # first row = most frequent
+
+# Same for protein chimeras, keeping Tempo's 5'::3' orientation
+chimeras <- sv |>
+  filter(fusion_class %in% c("in-frame", "protein-fusion")) |>
+  group_recurrence(groups, key_col = "GenePair", detail_cols = c("fusion_class", "fusion"))
+
+write_report_xlsx(list(SVGenes_Shared = shared, SVGenes_Ranked = ranked, Chimeras = chimeras),
+  str_glue("sharedSV_{date_stamp()}.xlsx"),
+  dictionary = bind_rows(wca_dictionary(), group_recurrence_dictionary(groups)))
+```
+
+The per-group sizes travel as the `denominator` attribute, so the
+DataDictionary reports `PCT_CellLine = n_CellLine / 3 samples` and so on.
 
 ## Tips
 
