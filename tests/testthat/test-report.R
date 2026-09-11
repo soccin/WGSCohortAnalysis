@@ -17,6 +17,19 @@ test_that("write_report_xlsx writes sheets, PCT formats and a DataDictionary", {
   expect_error(write_report_xlsx(list(t1), f), "named")
 })
 
+test_that("denominator_note handles a scalar and a named group vector", {
+  expect_equal(denominator_note(4), "PCT columns are n / 4 samples")
+  expect_equal(denominator_note(c(CellLine = 3L, Patient = 4L)),
+    "PCT_CellLine = n_CellLine / 3 samples; PCT_Patient = n_Patient / 4 samples")
+  t1 <- tibble(Gene = "A", n = 1, n_CellLine = 1, PCT_CellLine = 1 / 3)
+  attr(t1, "denominator") <- c(CellLine = 3L)
+  f <- withr::local_tempfile(fileext = ".xlsx")
+  write_report_xlsx(list(Shared = t1), f)
+  dict <- readxl::read_excel(f, "DataDictionary")
+  expect_true(any(dict$Sheet == "Shared" & dict$Column == "(denominator)" &
+    str_detect(dict$Description, "n_CellLine / 3 samples")))
+})
+
 test_that("wca_dictionary is unique per sheet and column", {
   d <- wca_dictionary()
   expect_false(any(duplicated(d[, c("Sheet", "Column")])))

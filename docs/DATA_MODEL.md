@@ -103,6 +103,10 @@ attribute; `event_summary()` widens a list of them to Gene, Nt, PCT,
 `<Event>_n`, `<Event>_PCT`. `cytoband_recurrence()`, `arm_recurrence()`,
 `sv_pair_recurrence()` and `fusion_table()` also carry the denominator
 attribute, which `write_report_xlsx()` prints in the DataDictionary sheet.
+`group_recurrence()` counts samples per key (Gene, PairKey, GenePair)
+within named sample groups: `<key>`, n, then `n_<group>`, `PCT_<group>`,
+`Samples_<group>` per group; its denominator attribute is the named vector
+of group sizes.
 
 Denominators: `n_samples` (cohort size) for SNV and SV; `n_cnv_samples`
 (samples passing `facets_qc_gate()`) for CNV.

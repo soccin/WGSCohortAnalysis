@@ -44,8 +44,9 @@ write_report_xlsx(list(AllEvents = tbl), "events.xlsx")
 plot_oncoprint(bind_events(snv, cnv, svg))
 ```
 
-`docs/CUSTOM_ANALYSIS.md` has three worked examples (a TP53 per-sample
-report, a gene-set matrix, a cohort subset by regex).
+`docs/CUSTOM_ANALYSIS.md` has four worked examples (a TP53 per-sample
+report, a gene-set matrix, a cohort subset by regex, events shared by
+sample groups).
 
 ## Quick start: standard run
 

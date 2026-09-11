@@ -159,6 +159,35 @@ test_that("cytoband, arm, pair, partner and fusion tables", {
   expect_true(all(fus$fusion_class %in% c("in-frame", "out-of-frame", "protein-fusion", "transcript")))
 })
 
+test_that("group_recurrence counts per group and ignores ungrouped samples", {
+  e <- events_fixture()
+  groups <- list(CellLine = c("CL01", "CL02"), Patient = "CL03")
+  g <- group_recurrence(e$svg, groups, detail_cols = "sv_class")
+  expect_equal(names(g), c("Gene", "n", "n_CellLine", "PCT_CellLine", "Samples_CellLine",
+    "n_Patient", "PCT_Patient", "Samples_Patient", "sv_class"))
+  expect_equal(attr(g, "denominator"), c(CellLine = 2L, Patient = 1L))
+  expect_equal(g$n, g$n_CellLine + g$n_Patient)
+  expect_equal(g$PCT_CellLine, g$n_CellLine / 2)
+  expect_true(all(diff(g$n) <= 0))
+  expect_true(all(str_detect(g$Samples_Patient, "^(CL03)?$")))
+  both <- g |> filter(n_CellLine == 2, n_Patient >= 1)
+  expect_true(all(both$Samples_CellLine == "CL01;CL02"))
+  expect_setequal(both$Gene, e$svg |> distinct(Gene, Sample) |> count(Gene) |> filter(n == 3) |> pull(Gene))
+  # ungrouped samples drop out of n
+  one <- group_recurrence(e$svg, list(A = "CL01"))
+  expect_true(all(one$n == 1))
+  expect_equal(nrow(one), n_distinct(filter(e$svg, Sample == "CL01")$Gene))
+  # pair-level keys work too
+  p <- group_recurrence(e$sv, groups, key_col = "PairKey", detail_cols = c("sv_class", "fusion_class"))
+  expect_equal(names(p)[1], "PairKey")
+  expect_true(all(p$n <= 3))
+  expect_error(group_recurrence(e$svg, list(c("CL01"))), "named")
+  expect_error(group_recurrence(e$svg, list(A = "CL01", B = "CL01")), "more than one group")
+  expect_error(group_recurrence(e$svg, list(`Cell Line` = "CL01")), "alphanumeric")
+  d <- group_recurrence_dictionary(groups)
+  expect_equal(d$Column, c("n_CellLine", "PCT_CellLine", "Samples_CellLine", "n_Patient", "PCT_Patient", "Samples_Patient"))
+})
+
 test_that("sample_summary has one row per sample and blanks failed QC", {
   e <- events_fixture()
   qcd <- read_cohort_qc(e$coh)

@@ -63,10 +63,22 @@ build_dictionary_sheet <- function(tables, dictionary, notes = NULL) {
     select(Sheet, Column, Description)
   denoms <- purrr::imap(tables, \(d, sheet) {
     den <- attr(d, "denominator")
-    if (is.null(den)) NULL else tibble(Sheet = sheet, Column = "(denominator)",
-      Description = str_glue("PCT columns are n / {den} samples"))
+    if (is.null(den)) return(NULL)
+    tibble(Sheet = sheet, Column = "(denominator)", Description = denominator_note(den))
   }) |> bind_rows()
   note_rows <- if (is.null(notes)) NULL else
     tibble(Sheet = "(notes)", Column = names(notes), Description = unname(notes))
   bind_rows(note_rows, denoms, described) |> as.data.frame()
+}
+
+#' Describe a table's denominator for the DataDictionary sheet
+#'
+#' @param den A single number, or a named vector of group sizes as attached
+#'   by `group_recurrence()`.
+#' @return One string.
+denominator_note <- function(den) {
+  if (length(den) == 1 && is.null(names(den))) {
+    return(as.character(str_glue("PCT columns are n / {den} samples")))
+  }
+  str_c(str_glue("PCT_{names(den)} = n_{names(den)} / {den} samples"), collapse = "; ")
 }
