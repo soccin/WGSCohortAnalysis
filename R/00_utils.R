@@ -60,7 +60,12 @@ date_stamp <- function(date = Sys.Date()) {
 #' @param x A tibble read with `col_types = cols(.default = "c")`.
 #' @return The same tibble with columns type-converted.
 type_convert_silent <- function(x) {
-  suppressMessages(readr::type_convert(x, guess_integer = TRUE))
+  # grouping_mark = "" matters: with readr's default "," a VCF FORMAT pair
+  # like manta's PR "90,0" parses as the number 900, and "101,22" as 10122.
+  # Whether it happens depends on the other values in the column, so the
+  # corruption is silent and row-dependent.
+  suppressMessages(readr::type_convert(x, guess_integer = TRUE,
+                                       locale = readr::locale(grouping_mark = "")))
 }
 
 #' Stop with a toolkit-prefixed message
