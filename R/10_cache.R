@@ -8,7 +8,12 @@
 # every run of a project.
 
 #' Bump this when a reader's output changes shape
-WCA_READER_VERSION <- "1"
+#'
+#' 2: readers no longer treat "," as a number grouping mark, so columns of
+#' comma-separated pairs such as manta PR/SR and delly CIPOS/CIEND come back
+#' as text instead of a run-together number. Entries written by version 1 are
+#' unreachable after this bump, which is the point.
+WCA_READER_VERSION <- "2"
 
 #' Read a file through the cache
 #'

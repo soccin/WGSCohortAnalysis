@@ -6,8 +6,8 @@
 #   source(file.path(Sys.getenv("WCA_HOME"), "load.R"))
 #
 # It attaches the tidyverse packages the toolkit uses, sources every file in
-# R/ in name order, records the toolkit home in option `wca.home`, and prints
-# the version and git SHA. Set `options(wca.quiet = TRUE)` before sourcing to
+# R/ in name order, records the toolkit home in option `wca.home`, installs
+# the toolkit readr locale, and prints the version and git SHA. Set `options(wca.quiet = TRUE)` before sourcing to
 # suppress the banner.
 
 wca_load <- function(home = NULL, quiet = getOption("wca.quiet", FALSE)) {
@@ -35,6 +35,11 @@ wca_load <- function(home = NULL, quiet = getOption("wca.quiet", FALSE)) {
 
   r_files <- sort(list.files(file.path(home, "R"), pattern = "\\.R$", full.names = TRUE))
   for (f in r_files) sys.source(f, envir = globalenv())
+
+  # readr and vroom read numbers with a grouping mark of "," by default, which
+  # turns a VCF pair like "90,0" into 900. Make the no-grouping locale the
+  # default for the whole session, so project scripts are covered too.
+  wca_set_locale()
 
   if (!quiet) {
     cat(sprintf("WGSCohortAnalysis %s loaded from %s\n", toolkit_version(), home))
