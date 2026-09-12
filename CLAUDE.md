@@ -30,13 +30,19 @@ attaches the dependencies, sources `R/*.R` in name order and sets
 
 ```
 load.R        wca_load()
-R/            00 utils, 01-06 manifests/paths/readers, 10 cache, 20-21 genome
-              and cn_call, 22-24 events/recurrence/burden, 30-31 plots and
+R/            00 utils, 01-07 manifests/paths/readers (07 featureCounts
+              expression), 10 cache, 20-21 genome and cn_call, 22-24
+              events/recurrence/burden, 25 gene model and fusion exons,
+              26 junction sequence triage, 27 alignment evidence (reads,
+              soft clips, depth, insertion genotypes), 30-31 plots and
               BED, 40-41 xlsx writer and dictionary, 50 params and run axis
 scripts/      the six pipeline stages, run against a project
 bin/          wcaNewProject.R, wcaUpdateManifests.R
 templates/    project scaffold copied by wcaNewProject.R
-tests/        run_tests.R, testthat/, fixtures/miniCohort (renamed cell lines)
+tests/        run_tests.R, testthat/, fixtures/miniCohort (renamed cell
+              lines) and fixtures/miniModel (a hand-built GTF). The BAM
+              and fasta fixtures for R/27 are synthesised in the test
+              itself, so no sequencing data lives in the repository.
 docs/         DATA_MODEL, METHODS, TEMPO_OUTPUT, CONSOLIDATION,
               CUSTOM_ANALYSIS, QUARTO_LINUX_INSTALL
 ```

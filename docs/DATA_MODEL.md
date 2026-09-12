@@ -96,6 +96,67 @@ Long table: Sample, Gene, EventType, Detail. EventType in
 `SNV, SNV-LoF, CNV-gain, CNV-loss, CNV-cnloh, SV, Fusion`. LoF SNVs appear
 under both `SNV` and `SNV-LoF`; fusions under both `SV` and `Fusion`.
 
+## gene_model (`read_gene_model()`)
+
+Exon and CDS records for named genes, read from a GENCODE GTF the caller
+supplies. One row per feature: gene, transcript, transcript_id, feature
+(`exon` or `CDS`), chrom, start, end, strand, exon (number in
+transcription order), phase, length. `longest_transcript()` picks one
+transcript per gene, `breakpoint_context()` places a position in that
+transcript, and `fusion_transcript()` returns the retained exons either
+side of a junction with the reading frame.
+
+## Junction anchors (`junction_anchor_support()`)
+
+One row per breakend of a called SV: breakend, chrom, pos, then the
+longest exact match between the caller's assembled consensus and the
+reference around that breakend (`match_len`, `match_start_in_consensus`,
+`match_pos`), `gc_in_match`, `at_fraction` and `informative`. A breakend
+whose only match is an A/T tract has `gc_in_match` near zero and is not
+located by the data, whatever mapping quality the caller reports.
+
+## Alignment evidence (`bam_reads()`, `bam_soft_clips()`)
+
+`bam_reads()` returns one row per primary alignment in a window: read_id,
+qname, flag, chrom, pos, ref_end, strand, mapq, cigar, mate_chrom,
+mate_pos, isize, seq. `pos` and `ref_end` bracket the aligned part only,
+so soft-clipped bases fall outside them.
+
+`bam_soft_clips()` is long, one row per clip: read_id, side
+(`left`/`right`), clip_pos (the reference base the clip abuts), clip_len,
+clip_seq, gc_frac, at_frac, plus pos, ref_end, mapq, strand and the mate
+columns. A cluster of clips at one base with a common clipped sequence is
+an insertion the reference does not have.
+
+`bam_binned_counts()` gives chrom, bin_start, bin_end, n, rel (n over the
+median bin) for evenly sampled windows, which is the cheap test of whether
+a called deletion removed anything. `bam_base_depth()` gives chrom, pos,
+depth over a small window, walking the CIGAR so deletions and skips are
+not counted as covered.
+
+`read_pair_orientation()` adds self_reverse, mate_reverse, self_is_left,
+orientation (`FR`/`RF`/`FF`/`RR`, read from the leftmost mate) and
+sv_signature. FR is the deletion or normal orientation, RF a tandem
+duplication, FF and RR the two junctions of an inversion; only FR pairs
+between two loci rules an inversion of the segment between them out.
+`clip_partner_match()` adds match_forward, match_revcomp and match_frac,
+the longest exact match between each clipped sequence and a candidate
+partner locus in each orientation, which is what separates a deletion
+junction from an inversion junction from sequence that is in neither.
+
+`clip_genotype()` returns one row: n_reads, n_intact, n_clipped, one
+count per named clip class, and vaf_clipped. No intact read means
+homozygous for the insertion, both means heterozygous, no clips means the
+reference allele. `ref_at_profile()` gives chrom, pos, at_frac in sliding
+reference windows.
+
+## Gene expression (`read_featurecounts_genes()`)
+
+gene, gene_id, count, length, library_size, CPM, FPKM for named genes from
+one featureCounts file. The library size is the sum over every gene in the
+file. `featurecounts_beside()` finds the file that sits next to a Forte
+metafusion call.
+
 ## Recurrence tables
 
 `recurrence_table()` returns Gene, n, PCT, Event with the denominator as an

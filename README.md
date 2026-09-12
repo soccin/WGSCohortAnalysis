@@ -44,9 +44,9 @@ write_report_xlsx(list(AllEvents = tbl), "events.xlsx")
 plot_oncoprint(bind_events(snv, cnv, svg))
 ```
 
-`docs/CUSTOM_ANALYSIS.md` has four worked examples (a TP53 per-sample
+`docs/CUSTOM_ANALYSIS.md` has five worked examples (a TP53 per-sample
 report, a gene-set matrix, a cohort subset by regex, events shared by
-sample groups).
+sample groups, a fusion resolved to exons).
 
 ## Quick start: standard run
 
@@ -126,8 +126,9 @@ and `dedup_manifest()`.
 
 ```
 load.R          wca_load(): sources R/*.R, attaches deps, sets option wca.home
-R/              00 utils, 01-06 manifests/paths/readers, 10 cache, 20-21 genome and
-                cn_call, 22-24 events/recurrence/burden, 30-31 plots and BED,
+R/              00 utils, 01-07 manifests/paths/readers, 10 cache, 20-21 genome and
+                cn_call, 22-24 events/recurrence/burden, 25-27 gene model, junction
+                sequence and alignment evidence, 30-31 plots and BED,
                 40-41 xlsx writer and dictionary, 50 params and run axis
 scripts/        the six pipeline stages (run against a project)
 templates/      project scaffold (00.PARAMS.yml, run_all.R, README, .gitignore)

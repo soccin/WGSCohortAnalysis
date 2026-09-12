@@ -1,6 +1,6 @@
 # Custom analyses with the toolkit
 
-Four worked examples that use the readers and summaries directly rather
+Six worked examples that use the readers and summaries directly rather
 than the standard pipeline. Each starts from a loaded toolkit:
 
 ```r
@@ -139,6 +139,91 @@ write_report_xlsx(list(SVGenes_Shared = shared, SVGenes_Ranked = ranked, Chimera
 
 The per-group sizes travel as the `denominator` attribute, so the
 DataDictionary reports `PCT_CellLine = n_CellLine / 3 samples` and so on.
+
+## 5. A fusion resolved to exons (from NKCohort/report02_ascc3.R)
+
+What a junction does to the two genes it joins: which exons stay with each
+promoter, whether the reading frame survives, and how big the predicted
+chimera is. Exon coordinates come from a GENCODE GTF the project names in
+its own parameters, so nothing here depends on an annotation package.
+
+```r
+sv <- stage_load(PARAMS, "03_events", "sv")
+junction <- sv |> filter(GenePair == "PKHD1::ASCC3") |> slice(1)
+
+model <- read_gene_model(PARAMS$ascc3$gene_model_gtf, c("ASCC3", "PKHD1"))
+tx <- longest_transcript(model)
+
+# Where each breakend lands: exon, intron, and how far from either exon.
+breakpoint_context(model, tx[["ASCC3"]], junction$START_B)
+#> region "intron", exon 10, dist_prev 20410, dist_next 20452
+
+# Both genes are on the minus strand and the junction is +/-, so the
+# retained halves are ASCC3 5' and PKHD1 3'.
+fus <- fusion_transcript(model, tx[["ASCC3"]], tx[["PKHD1"]],
+                         junction$START_B, junction$START_A)
+fus$summary        # last_exon5 10, first_exon3 36, in_frame TRUE, aa_total 2736
+fus$exons5         # the retained exon rows, for a detail sheet
+
+ggsave("fusion.pdf", plot_fusion_exons(fus, model, "ASCC3::PKHD1"),
+       width = 9, height = 4)
+```
+
+`fusion_transcript()` decides the frame from CDS lengths and the GENCODE
+phase of the 3' partner's first retained coding exon, so it agrees with
+Tempo's `fusion_class` without trusting it.
+
+## 6. A called junction checked against the alignments (from NKCohort/report03_ascc3_client.R)
+
+When a recurrent junction looks wrong, the alignments settle it. The
+question is whether the reference is missing sequence that the sample
+has, which is what a mobile element insertion looks like to a caller that
+only models rearrangements.
+
+```r
+bam <- "path/to/tumor.bam"
+
+# Reads at the locus, and the parts of them the aligner had to cut away.
+reads <- bam_reads(bam, "6", 101193772, 101194305)
+clips <- bam_soft_clips(reads, min_len = 15) |>
+  filter(clip_pos >= 101194022, clip_pos <= 101194055)
+clips |> count(side, clip_pos)
+#> left 101194032 (poly-A), right 101194045 ((CCCTCT)n)
+
+# The two clipped sequences are the two ends of an SVA element, and the
+# 14 bases between the clip points are its target site duplication.
+genotype <- clip_genotype(bam, "6", 101194032, 101194045,
+  classes = list(hexamer = \(s) str_detect(s, "CCCTCT"),
+                 polyA = \(s) str_count(s, "[AT]") / nchar(s) > 0.9))
+genotype   # n_intact 0 means both copies carry it
+
+# A 49 Mb deletion would halve the depth over the interval. This does not.
+cov <- bam_binned_counts(bam, "6", 45e6, 108e6, n_bins = 160, bin_width = 2000)
+cov |> summarize(inside = median(rel[bin_start > 51.8e6 & bin_end < 101.2e6]))
+
+# The second breakend sits on a tract with no G or C, which is the only
+# reference sequence a poly-A read can match.
+ref_at_profile(fasta, "6", 51847348, 51848148) |> filter(at_frac == 1)
+
+# Deletion or inversion? Orientation answers the second question: an
+# inversion of the segment between two loci makes FF and RR pairs and
+# cannot make an FR pair across its own span.
+reads |>
+  filter(mate_chrom == "6", abs(mate_pos - 51847748) < 5000) |>
+  read_pair_orientation() |>
+  count(orientation, sv_signature)
+
+# Sequence answers both at once. A deletion needs the clipped tail to be
+# the partner locus forwards, an inversion needs it reverse complemented.
+# Matching neither rules out both.
+clip_partner_match(clips, read_ref_seq(fasta, "6", 51847148, 51848348)) |>
+  summarize(clip = median(clip_len), fwd = max(match_forward), rev = max(match_revcomp))
+```
+
+Expression answers the other half: `read_featurecounts_genes()` on the
+Forte output beside each fusion call shows the gene still transcribed and
+the predicted partner not transcribed at all, which is why no RNA fusion
+call exists.
 
 ## Tips
 
