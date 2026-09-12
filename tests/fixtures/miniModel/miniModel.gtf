@@ -1,0 +1,22 @@
+##description: hand-built GTF for gene-model tests
+chr1	TEST	exon	1000	1099	.	+	.	gene_id "GA.1"; transcript_id "GA-201.1"; gene_type "protein_coding"; gene_name "GA"; transcript_type "protein_coding"; transcript_name "GA-201"; exon_number 1; level 2;
+chr1	TEST	CDS	1050	1099	.	+	0	gene_id "GA.1"; transcript_id "GA-201.1"; gene_type "protein_coding"; gene_name "GA"; transcript_type "protein_coding"; transcript_name "GA-201"; exon_number 1; level 2;
+chr1	TEST	exon	2000	2099	.	+	.	gene_id "GA.1"; transcript_id "GA-201.1"; gene_type "protein_coding"; gene_name "GA"; transcript_type "protein_coding"; transcript_name "GA-201"; exon_number 2; level 2;
+chr1	TEST	CDS	2000	2099	.	+	1	gene_id "GA.1"; transcript_id "GA-201.1"; gene_type "protein_coding"; gene_name "GA"; transcript_type "protein_coding"; transcript_name "GA-201"; exon_number 2; level 2;
+chr1	TEST	exon	3000	3099	.	+	.	gene_id "GA.1"; transcript_id "GA-201.1"; gene_type "protein_coding"; gene_name "GA"; transcript_type "protein_coding"; transcript_name "GA-201"; exon_number 3; level 2;
+chr1	TEST	CDS	3000	3099	.	+	0	gene_id "GA.1"; transcript_id "GA-201.1"; gene_type "protein_coding"; gene_name "GA"; transcript_type "protein_coding"; transcript_name "GA-201"; exon_number 3; level 2;
+chr1	TEST	exon	4000	4199	.	+	.	gene_id "GA.1"; transcript_id "GA-201.1"; gene_type "protein_coding"; gene_name "GA"; transcript_type "protein_coding"; transcript_name "GA-201"; exon_number 4; level 2;
+chr1	TEST	CDS	4000	4149	.	+	2	gene_id "GA.1"; transcript_id "GA-201.1"; gene_type "protein_coding"; gene_name "GA"; transcript_type "protein_coding"; transcript_name "GA-201"; exon_number 4; level 2;
+chr1	TEST	exon	1000	1099	.	+	.	gene_id "GA.1"; transcript_id "GA-202.1"; gene_type "protein_coding"; gene_name "GA"; transcript_type "protein_coding"; transcript_name "GA-202"; exon_number 1; level 2;
+chr1	TEST	CDS	1000	1099	.	+	0	gene_id "GA.1"; transcript_id "GA-202.1"; gene_type "protein_coding"; gene_name "GA"; transcript_type "protein_coding"; transcript_name "GA-202"; exon_number 1; level 2;
+chr1	TEST	exon	2000	2099	.	+	.	gene_id "GA.1"; transcript_id "GA-202.1"; gene_type "protein_coding"; gene_name "GA"; transcript_type "protein_coding"; transcript_name "GA-202"; exon_number 2; level 2;
+chr1	TEST	CDS	2000	2099	.	+	1	gene_id "GA.1"; transcript_id "GA-202.1"; gene_type "protein_coding"; gene_name "GA"; transcript_type "protein_coding"; transcript_name "GA-202"; exon_number 2; level 2;
+chr1	TEST	exon	9000	9099	.	-	.	gene_id "GB.1"; transcript_id "GB-201.1"; gene_type "protein_coding"; gene_name "GB"; transcript_type "protein_coding"; transcript_name "GB-201"; exon_number 1; level 2;
+chr1	TEST	CDS	9000	9049	.	-	0	gene_id "GB.1"; transcript_id "GB-201.1"; gene_type "protein_coding"; gene_name "GB"; transcript_type "protein_coding"; transcript_name "GB-201"; exon_number 1; level 2;
+chr1	TEST	exon	8000	8099	.	-	.	gene_id "GB.1"; transcript_id "GB-201.1"; gene_type "protein_coding"; gene_name "GB"; transcript_type "protein_coding"; transcript_name "GB-201"; exon_number 2; level 2;
+chr1	TEST	CDS	8000	8099	.	-	1	gene_id "GB.1"; transcript_id "GB-201.1"; gene_type "protein_coding"; gene_name "GB"; transcript_type "protein_coding"; transcript_name "GB-201"; exon_number 2; level 2;
+chr1	TEST	exon	7000	7099	.	-	.	gene_id "GB.1"; transcript_id "GB-201.1"; gene_type "protein_coding"; gene_name "GB"; transcript_type "protein_coding"; transcript_name "GB-201"; exon_number 3; level 2;
+chr1	TEST	CDS	7000	7099	.	-	0	gene_id "GB.1"; transcript_id "GB-201.1"; gene_type "protein_coding"; gene_name "GB"; transcript_type "protein_coding"; transcript_name "GB-201"; exon_number 3; level 2;
+chr1	TEST	exon	6000	6199	.	-	.	gene_id "GB.1"; transcript_id "GB-201.1"; gene_type "protein_coding"; gene_name "GB"; transcript_type "protein_coding"; transcript_name "GB-201"; exon_number 4; level 2;
+chr1	TEST	CDS	6050	6199	.	-	2	gene_id "GB.1"; transcript_id "GB-201.1"; gene_type "protein_coding"; gene_name "GB"; transcript_type "protein_coding"; transcript_name "GB-201"; exon_number 4; level 2;
+chr1	TEST	exon	20000	20099	.	+	.	gene_id "GAX.1"; transcript_id "GAX-201.1"; gene_type "protein_coding"; gene_name "GAX"; transcript_type "protein_coding"; transcript_name "GAX-201"; exon_number 1; level 2;
