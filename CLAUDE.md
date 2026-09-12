@@ -45,6 +45,8 @@ tests/        run_tests.R, testthat/, fixtures/miniCohort (renamed cell
               itself, so no sequencing data lives in the repository.
 docs/         DATA_MODEL, METHODS, TEMPO_OUTPUT, CONSOLIDATION,
               CUSTOM_ANALYSIS, QUARTO_LINUX_INSTALL
+ISSUES.md     known problems and open questions, one section each; read it
+              before proposing work and delete a section when it is settled
 ```
 
 An analysis is one folder: a fresh clone of this toolkit with the project
