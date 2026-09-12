@@ -49,3 +49,16 @@ test_that("read_cohort_sv binds the three fixtures", {
   expect_equal(n_distinct(sv$Sample), 3)
   expect_equal(names(sv)[1:3], c("Sample", "NID", "GenePair"))
 })
+
+test_that("comma-separated FORMAT pairs are not parsed as grouped numbers", {
+  # manta writes PR and SR as "ref,alt". readr's default grouping mark turns
+  # "90,0" into 900 and "101,22" into 10122, silently and only when every
+  # other value in the column also parses, so the bug moves with the data.
+  x <- tibble(manta_PR = c("90,0", "86,0"), manta_SR = c("101,22", "92,35"),
+              depth = c("35", "40"))
+  out <- type_convert_silent(x)
+  expect_type(out$manta_PR, "character")
+  expect_type(out$manta_SR, "character")
+  expect_equal(out$manta_PR, c("90,0", "86,0"))
+  expect_type(out$depth, "integer")
+})
