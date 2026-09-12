@@ -55,17 +55,41 @@ date_stamp <- function(date = Sys.Date()) {
   format(date, "%y%m%d")
 }
 
+#' The locale every reader in this toolkit uses
+#'
+#' `readr::locale()` defaults `grouping_mark` to `","`, so a column whose
+#' every value looks like `"90,0"` is read as the number 900 and `"101,22"`
+#' as 10122. VCF INFO and FORMAT fields are full of comma-separated pairs,
+#' and a comma-separated pair is two numbers, never one. The conversion
+#' fires only when every value in the column parses, so the damage is
+#' silent and depends on the other rows in the file.
+#'
+#' @return A `readr` locale with no grouping mark.
+wca_locale <- function() {
+  readr::locale(grouping_mark = "")
+}
+
+#' Install the no-grouping locale as the readr and vroom default
+#'
+#' Called by `wca_load()`, so a bare `read_tsv()` in a project script is as
+#' safe as a reader in `R/`. Both packages read their default locale from an
+#' option at call time, so setting it once covers every later read.
+#'
+#' @return Invisibly, the locale that was installed.
+wca_set_locale <- function() {
+  loc <- wca_locale()
+  options(readr.default_locale = loc,
+          vroom.default_locale = vroom::locale(grouping_mark = ""))
+  invisible(loc)
+}
+
 #' Convert character columns to their natural types without messages
 #'
 #' @param x A tibble read with `col_types = cols(.default = "c")`.
 #' @return The same tibble with columns type-converted.
 type_convert_silent <- function(x) {
-  # grouping_mark = "" matters: with readr's default "," a VCF FORMAT pair
-  # like manta's PR "90,0" parses as the number 900, and "101,22" as 10122.
-  # Whether it happens depends on the other values in the column, so the
-  # corruption is silent and row-dependent.
   suppressMessages(readr::type_convert(x, guess_integer = TRUE,
-                                       locale = readr::locale(grouping_mark = "")))
+                                       locale = wca_locale()))
 }
 
 #' Stop with a toolkit-prefixed message

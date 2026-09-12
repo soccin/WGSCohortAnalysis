@@ -69,6 +69,20 @@ records which toolkit produced the results.
   same tumor but *different* md5 are reported, never resolved: that is a
   person's decision.
 - **Chromosomes are unprefixed**, with FACETS 23/24 mapped to X/Y.
+- **Never let a comma be read as a grouping mark.** `"90,0"` is two numbers,
+  not 900, and no field in any file this toolkit reads ever means 900. But
+  `readr::locale()` defaults `grouping_mark = ","`, so `read_tsv()`,
+  `read_csv()`, `vroom()` and `type_convert()` all do exactly that, with no
+  warning, and only when every value in the column happens to parse, so the
+  same code is right on one cohort and wrong on the next. VCF INFO and FORMAT
+  fields are full of comma-separated pairs: manta `PR`/`SR`, delly
+  `CIPOS`/`CIEND`, per-allele `AC` and `AF`. `wca_load()` installs
+  `wca_locale()` as the readr and vroom session default so this cannot
+  happen, and `type_convert_silent()` passes it explicitly. Do not write a
+  reader that guesses types under any other locale, do not pass
+  `locale = readr::locale()` anywhere, and do not "fix" a column that came
+  back as text by calling `parse_number()` on it. `tests/testthat/test-comma-numbers.R`
+  guards this.
 
 ## Conventions
 

@@ -20,7 +20,8 @@ read_featurecounts_genes <- function(path, gene_ids) {
   ids <- unlist(gene_ids)
   if (length(ids) == 0) wca_abort("read_featurecounts_genes(): gene_ids is empty")
   if (!file_exists(path)) wca_abort("featureCounts file not found: {path}")
-  d <- read_tsv(path, comment = "#", show_col_types = FALSE, progress = FALSE)
+  d <- read_tsv(path, comment = "#", locale = wca_locale(),
+                show_col_types = FALSE, progress = FALSE)
   require_cols(d, c("Geneid", "Length"), "featureCounts table")
   names(d)[ncol(d)] <- "count"
   total <- sum(d$count, na.rm = TRUE)

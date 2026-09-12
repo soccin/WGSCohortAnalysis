@@ -98,6 +98,11 @@ SVTYPE, SVLEN, STRANDS, and `<caller>_<field>` entries). `FORMAT` is a
 whose values are in `TUMOR` and `NORMAL`; the set of callers per row varies,
 so the pivot yields NA where a caller did not call.
 
+Several of those values are a comma-separated pair rather than one number:
+manta `PR` and `SR` are `ref,alt`, delly `CIPOS` and `CIEND` are an interval.
+They stay as text, and `sv_vaf()` splits them on the comma. See the rule
+about grouping marks in `CLAUDE.md` for why that is not negotiable.
+
 ### FACETS
 
 * `gene_level.txt`: sample, gene, chrom (1-22, 23 = X), gene_start,
