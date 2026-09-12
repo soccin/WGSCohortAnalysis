@@ -199,3 +199,45 @@ read_cohort_sv <- function(cohort, cache_dir = NULL, ...) {
   read_cohort_files(cohort, file_col = "sv_file", reader = read_tempo_sv,
     cache_dir = cache_dir, what = "SV", ...)
 }
+
+#' Breakends falling in a genomic window, scanned straight from bedpe files
+#'
+#' A locus question asked across a whole manifest, without parsing every
+#' call in every file. Either breakend of a row counts, so an event joining
+#' the window to somewhere else is found from either side.
+#'
+#' @param paths Named character vector of bedpe paths; names become `Sample`.
+#' @param chrom,start,end Window, on the bedpe's own chromosome naming.
+#' @param cols Named integer vector of extra 1-based columns to return.
+#' @return Tibble: Sample, CHROM_A, START_A, CHROM_B, START_B, then `cols`.
+#'   Zero rows when nothing matches. Files that do not exist are skipped.
+bedpe_breakends_in_window <- function(paths, chrom, start, end,
+                                      cols = c(ID = 7L, TYPE = 11L,
+                                               STRAND_A = 9L, STRAND_B = 10L)) {
+  keep <- fs::file_exists(paths)
+  if (!any(keep)) wca_abort("bedpe_breakends_in_window(): no file in `paths` exists")
+  paths <- paths[keep]
+  spec <- str_c("$", cols, collapse = ",")
+  out <- imap(paths, \(pp, nm) {
+    cmd <- str_glue(
+      "awk -F'\\t' 'BEGIN{{OFS=\"\\t\"}} !/^#/ && ",
+      "((($1==\"{chrom}\")&&($2+0>={start})&&($2+0<={end}))||",
+      "(($4==\"{chrom}\")&&($5+0>={start})&&($5+0<={end}))) ",
+      "{{print $1,$2,$4,$5,{spec}}}' {shQuote(pp)}")
+    lines <- suppressWarnings(system(cmd, intern = TRUE))
+    if (length(lines) == 0) return(NULL)
+    read_tsv(I(lines), col_names = c("CHROM_A", "START_A", "CHROM_B", "START_B",
+                                     names(cols)),
+             col_types = cols(.default = "c"), progress = FALSE) |>
+      mutate(Sample = nm, .before = 1)
+  }) |>
+    purrr::compact() |>
+    list_rbind()
+  if (nrow(out) == 0) {
+    return(tibble(Sample = character(), CHROM_A = character(), START_A = integer(),
+                  CHROM_B = character(), START_B = integer()))
+  }
+  out |>
+    mutate(CHROM_A = normalize_chrom(CHROM_A), CHROM_B = normalize_chrom(CHROM_B),
+           START_A = as.integer(START_A), START_B = as.integer(START_B))
+}

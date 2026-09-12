@@ -62,3 +62,41 @@ test_that("comma-separated FORMAT pairs are not parsed as grouped numbers", {
   expect_equal(out$manta_PR, c("90,0", "86,0"))
   expect_type(out$depth, "integer")
 })
+
+test_that("bedpe_breakends_in_window finds a hit from either breakend", {
+  dir <- fs::path(tempdir(), "bedpe_scan")
+  fs::dir_create(dir)
+  hdr <- "#CHROM_A\tSTART_A\tEND_A\tCHROM_B\tSTART_B\tEND_B\tID\tQUAL\tSTRAND_A\tSTRAND_B\tTYPE"
+  row <- function(ca, sa, cb, sb, id, type) {
+    str_c(ca, sa, sa + 1L, cb, sb, sb + 1L, id, ".", "+", "-", type, sep = "\t")
+  }
+  a <- fs::path(dir, "s1.bedpe")
+  write_lines(c(hdr,
+    row("6", 51847748L, "6", 101194031L, "ev_A_side", "DEL"),   # window at B
+    row("6", 101180470L, "6", 101213829L, "ev_both", "DEL"),    # window at A and B
+    row("6", 5000L, "9", 9000L, "ev_far", "BND")), a)
+  b <- fs::path(dir, "s2.bedpe")
+  write_lines(c(hdr, row("1", 100L, "2", 200L, "ev_none", "BND")), b)
+
+  paths <- c(S1 = a, S2 = b)
+  h <- bedpe_breakends_in_window(paths, "6", 101173580L, 101214440L)
+  expect_equal(sort(h$ID), c("ev_A_side", "ev_both"))
+  expect_true(all(h$Sample == "S1"))
+  expect_equal(h$START_B[h$ID == "ev_A_side"], 101194031L)
+  expect_type(h$START_A, "integer")
+  expect_equal(h$TYPE[h$ID == "ev_both"], "DEL")
+
+  # A sample with nothing in the window contributes no rows, and a window
+  # with no hit anywhere returns a typed empty tibble rather than an error.
+  expect_false("S2" %in% h$Sample)
+  empty <- bedpe_breakends_in_window(paths, "22", 1L, 1000L)
+  expect_equal(nrow(empty), 0)
+  expect_true(all(c("Sample", "START_A") %in% names(empty)))
+
+  # Missing files are skipped; all missing is an error.
+  h2 <- bedpe_breakends_in_window(c(paths, S3 = fs::path(dir, "gone.bedpe")),
+                                  "6", 101173580L, 101214440L)
+  expect_equal(nrow(h2), nrow(h))
+  expect_error(bedpe_breakends_in_window(c(X = fs::path(dir, "gone.bedpe")),
+                                         "6", 1L, 2L), "no file")
+})
