@@ -160,8 +160,10 @@ retained_exons <- function(model, transcript, pos, side = c("5p", "3p")) {
 #' returns the exon structure and reading frame of the chimera. Frame is
 #' computed from CDS lengths: the 5' partner contributes
 #' `sum(CDS) %% 3` bases into the junction codon and the 3' partner's first
-#' retained coding exon carries a GTF phase, so the fusion is in frame when
-#' the two agree.
+#' retained coding exon carries a GTF phase. A GTF phase is the number of
+#' bases before the first whole codon, the bases that finish a codon left
+#' open upstream, so the fusion is in frame when `(3 - frame5) %% 3 ==
+#' phase3`. Every native splice of a transcript passes this test.
 #'
 #' @param model Table from `read_gene_model()`.
 #' @param tx5,tx3 Transcript names of the 5' and 3' partners.
@@ -197,7 +199,7 @@ fusion_transcript <- function(model, tx5, tx3, pos5, pos3) {
       aa5 = len5 %/% 3, aa3 = len3 %/% 3,
       aa_total = (len5 + len3) %/% 3,
       frame5 = frame5, phase3 = phase3,
-      in_frame = !is.na(phase3) && frame5 == phase3
+      in_frame = !is.na(phase3) && (3 - frame5) %% 3 == phase3
     )
   )
 }
