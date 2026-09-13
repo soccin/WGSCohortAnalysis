@@ -100,6 +100,39 @@ test_that("fusion_transcript computes retained exons and the reading frame", {
   expect_error(fusion_transcript(m, "GA-201", "GB-201", 500, 7500), "retains no exons")
 })
 
+test_that("fusion_transcript reads a GTF phase as the bases that finish a codon", {
+  m <- mini_model()
+
+  # A transcript joined to itself across one intron is its own native splice,
+  # so it must test in frame. Across the three introns of each gene the 5'
+  # side leaves 2, 0 and 1 bases over and the next exon has phase 1, 0 and 2.
+  native <- tribble(
+    ~tx,      ~pos, ~frame5, ~phase3,
+    "GA-201", 1500, 2,       1L,
+    "GA-201", 2500, 0,       0L,
+    "GA-201", 3500, 1,       2L,
+    "GB-201", 8500, 2,       1L,                        # minus strand
+    "GB-201", 7500, 0,       0L,
+    "GB-201", 6500, 1,       2L
+  )
+  pwalk(native, function(tx, pos, frame5, phase3) {
+    s <- fusion_transcript(m, tx, tx, pos, pos)$summary
+    expect_equal(s$frame5, frame5)
+    expect_equal(s$phase3, phase3)
+    expect_true(s$in_frame, label = glue("{tx} native splice at {pos}"))
+  })
+
+  # One base left over needs a phase 2 exon: GA exons 1-3 :: GB exon 4.
+  expect_true(fusion_transcript(m, "GA-201", "GB-201", 3500, 6500)$summary$in_frame)
+
+  # Two bases left over do not match phase 2: GA exon 1 :: GB exon 4.
+  # Testing frame5 == phase3 would call this one in frame.
+  off <- fusion_transcript(m, "GA-201", "GB-201", 1500, 6500)$summary
+  expect_equal(off$frame5, 2)
+  expect_equal(off$phase3, 2L)
+  expect_false(off$in_frame)
+})
+
 test_that("plot_fusion_exons draws a track per parent plus the chimera", {
   m <- mini_model()
   f <- fusion_transcript(m, "GA-201", "GB-201", 2500, 7500)
