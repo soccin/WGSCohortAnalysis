@@ -5,6 +5,28 @@ tracker: a short list of things a person has to decide or fix, with enough
 context that the next reader does not have to rediscover them. Delete a
 section when it is resolved and say so in the commit message.
 
+## Cohort selection fails open without a warning
+
+`scripts/01_cohort.R` unions `include_projects` with the workbook rows
+`include_ucode` selects, and applies no project filter when the union is
+empty. Three settings therefore select far more than intended and run to
+completion (table in `docs/METHODS.md`, Cohort selection):
+
+- `projects_file` with `include_ucode: []` selects every workbook project,
+  whatever `include_projects` says. The APTL setup preview on 24 September
+  2026 had this: 21 projects and 212 tumors instead of 5 and 22.
+- `include_ucode` without `projects_file` is ignored.
+- A `Ucode` that matches no workbook row selects nothing, so the union is
+  empty and every project in the manifests is kept.
+
+The docs now say to use one of the two ways. A guard in stage 01 would
+make it impossible to get wrong: stop when `projects_file` is set and
+`include_ucode` is empty, when `include_ucode` is set without
+`projects_file`, and when `include_ucode` matches no workbook row; and
+print the selected `ProjNo` values, not only their count.
+
+Undecided. Raised 25 September 2026.
+
 ## delly_CIPOS and delly_CIEND are carried but never used
 
 `read_tempo_sv()` pivots every delly FORMAT field, so the confidence

@@ -14,10 +14,13 @@ manifests:                              # CSV: TID,NID,ProjNo,PATH,Sig
   snv: data/raw/tempoSNVManifest.csv    # PATH = *.somatic.final.maf
   sv:  data/raw/tempoSVManifest.csv     # PATH = *.final.bedpe
 
+# Cohort: set ONE of include_projects, or projects_file + include_ucode.
+# The two selections are unioned; if both are empty, every project in the
+# manifests is kept. Table of cases: docs/METHODS.md, Cohort selection.
 cohort:
-  projects_file: null                   # optional xlsx with Project, Ucode columns
-  include_ucode: []                     # keep these Ucode values from projects_file
-  include_projects: []                  # explicit ProjNo list (union with projects_file)
+  projects_file: null                   # xlsx with Project, Ucode columns; set only with include_ucode
+  include_ucode: []                     # Ucode values to keep; read only when projects_file is set; empty = every row
+  include_projects: []                  # ProjNo list; added to the Ucode selection, never narrows it
   exclude_tid_regex: null               # e.g. "_CL|CG-AML"
   require_both: true                    # SNV and SV tumor sets must match
 

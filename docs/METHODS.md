@@ -8,8 +8,7 @@ the rationale and the older-script rules that were retired.
 1. Read both manifests (`TID,NID,ProjNo,PATH,Sig`).
 2. Drop tumors matching `cohort.exclude_tid_regex` (e.g. `_CL` cell lines,
    `CG-AML`).
-3. Keep projects listed in `cohort.include_projects` or selected by
-   `cohort.include_ucode` from the projects workbook.
+3. Keep the selected projects (see Cohort selection below).
 4. `distinct(Sig)`: a pair reachable by two paths (the 17495_I `out/` and
    `results/r_002/` copies) is read once. `Sig` is the file md5, so equal
    Sig means identical content.
@@ -18,6 +17,51 @@ the rationale and the older-script rules that were retired.
    asymmetry logged (`has_snv`, `has_sv`).
 6. `snv_dir` and `sv_dir` are resolved independently because the Umich
    samples have SVs in a `DownSV/` run and MAF + FACETS in `NoSV/` runs.
+
+### Cohort selection
+
+Stage 01 builds one list of `ProjNo` values from two sources and takes
+their union:
+
+- `include_projects`, as written;
+- when `projects_file` is set, the workbook rows whose `Ucode` is in
+  `include_ucode`. An empty `include_ucode` selects every row.
+
+If the union is empty, no project filter is applied and every project in
+the manifests is kept. `include_ucode` is read only when `projects_file` is
+set.
+
+What each setting selects, checked on the 260924 manifests (21 projects,
+212 tumors; APTL is 5 projects, 22 tumors):
+
+| `projects_file` | `include_ucode` | `include_projects` | Selects | Tumors |
+|---|---|---|---|---|
+| null | `[]` | `[]` | every project in the manifests | 212 |
+| null | `[APTL]` | `[]` | every project: the Ucode is ignored | 212 |
+| null | `[]` | APTL list | the list | 22 |
+| workbook | `[]` | `[]` | every project in the workbook | 212 |
+| workbook | `[]` | APTL list | every project in the workbook: the list does not narrow it | 212 |
+| workbook | `[APTL]` | `[]` | the projects with that Ucode | 22 |
+| workbook | `[APTL]` | APTL list | the Ucode projects plus the list | 22 |
+| workbook | `[APTX]` (typo) | `[]` | every project in the manifests | 212 |
+
+None of the wrong rows stops with an error. Choose exactly one way:
+
+- **By ProjNo (the default).** `include_projects: [the list]`,
+  `projects_file: null`, `include_ucode: []`. Nothing else is consulted.
+- **By Ucode.** `projects_file: <workbook>`, `include_ucode: [the code]`,
+  `include_projects: []`. First check that every cohort `ProjNo` in the
+  manifests has that `Ucode` in the workbook: a project missing from the
+  workbook, or listed under another code, is dropped without an error.
+  `Ucode` is set per project; a suffixed project does not inherit the base
+  project's code.
+
+Never set `projects_file` with `include_ucode` empty.
+
+After stage 01, check the result. The stage prints
+`cohort: N samples across P projects`; P must be the number of projects
+in the cohort, and the `ProjNo` column of `results/<run>/tables/cohort.xlsx`
+must hold exactly those projects.
 
 ## SNV
 

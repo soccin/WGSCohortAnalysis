@@ -55,7 +55,7 @@ Only these usually change:
 | Key | What to set |
 |---|---|
 | `manifests.snv` / `manifests.sv` | the filenames you just copied |
-| `cohort.include_projects` | the ProjNo values for this cohort, e.g. `[17495_I]` |
+| `cohort.include_projects` | the ProjNo values for this cohort, e.g. `[17495_I]`; leave `projects_file: null` (to select by Ucode instead, see `docs/METHODS.md`, Cohort selection) |
 | `cohort.exclude_tid_regex` | drop cell lines and the like, e.g. `"_CL"` |
 | `cohort.require_both` | `false` if a tumor is missing from one manifest |
 | `report.genes_of_interest` | exact symbols, e.g. `[TP53, IKZF2]` |

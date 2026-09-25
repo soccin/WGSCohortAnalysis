@@ -5,8 +5,9 @@
 - `tempoSNVManifest_<yymmdd>.csv` and `tempoSVManifest_<yymmdd>.csv`:
   Tempo manifests (`TID,NID,ProjNo,PATH,Sig`). `Sig` is the md5 of the file
   at `PATH`. Build new ones with `scan_tempo_outputs()` from the toolkit.
-- optional projects workbook (`Project`, `Type`, `Ucode`, `LabSet`) used by
-  `cohort.include_ucode` in `00.PARAMS.yml`.
+- optional projects workbook (`Project`, `Type`, `Ucode`, `LabSet`), named
+  by `cohort.projects_file` when the cohort is selected by `Ucode`
+  (`cohort.include_ucode` in `00.PARAMS.yml`).
 
 Nothing under `data/` is written by the pipeline.
 
