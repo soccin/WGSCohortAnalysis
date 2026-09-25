@@ -1,7 +1,8 @@
 # Quarto on RHEL 8 without root
 
-For a future HTML report (`templates/project/report.qmd`). Nothing in the
-toolkit needs quarto today; the pipeline writes xlsx and PDF.
+For a future HTML report (`templates/project/analysis/report.qmd`).
+Nothing in the toolkit needs quarto today; the pipeline writes xlsx and
+PDF.
 
 ## 1. Install the CLI tarball in user space
 
@@ -54,8 +55,11 @@ install.packages(c("quarto", "rmarkdown", "knitr", "DT", "gt"))
 
 ## 5. Shape of the future report.qmd
 
-A project-level `report.qmd` would read `00.PARAMS.yml`, load the toolkit,
-and pull the stage outputs rather than recompute:
+A project-level `analysis/report.qmd` would read `00.PARAMS.yml`, load the
+toolkit, and pull the stage outputs rather than recompute. Report sources
+(`.qmd`, `.Rmd`) go in `analysis/`, not the project root. knitr runs the
+code with `analysis/` as the working directory, so paths are built from
+`here::here()`, which finds the root through the template's `.here` file:
 
 ````
 ---
@@ -67,8 +71,9 @@ format:
 ---
 
 ```{r setup}
+root <- here::here()
 source(file.path(Sys.getenv("WCA_HOME"), "load.R"))
-PARAMS <- wca_read_params("00.PARAMS.yml")
+PARAMS <- wca_read_params(fs::path(root, "00.PARAMS.yml"))
 s <- function(x) stage_load(PARAMS, "04_summaries", x)
 ```
 
@@ -89,5 +94,20 @@ plot_oncoprint(stage_load(PARAMS, "03_events", "events"))
 ````
 
 `embed-resources: true` gives a single self-contained HTML file that can be
-copied off the cluster. Add `scripts/07_report_html.R` calling
-`quarto::quarto_render()` when this is wanted.
+copied off the cluster. Render from inside `analysis/`, into the run's
+results folder:
+
+```
+cd analysis
+quarto render report.qmd --output-dir ../results/run01 \
+  --output <prefix>_Report_<yymmdd>.html
+```
+
+Rendering `analysis/report.qmd` from the project root with `--output-dir`
+fails in Quarto 1.10.18: the chunks run, then post-processing looks for
+`report_files/libs/quarto-html/quarto.js` in the directory it was started
+from instead of beside the qmd, and leaves an incomplete html in the root.
+
+Add `scripts/07_report_html.R` calling `quarto::quarto_render()` when this
+is wanted. Untested: whether `quarto_render()` hits the same failure when
+called from the project root; it runs the same CLI.
