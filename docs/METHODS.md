@@ -31,21 +31,25 @@ If the union is empty, no project filter is applied and every project in
 the manifests is kept. `include_ucode` is read only when `projects_file` is
 set.
 
-What each setting selects, checked on the 260924 manifests (21 projects,
-212 tumors; APTL is 5 projects, 22 tumors):
+What each setting would select, checked on the 260924 manifests (21
+projects, 212 tumors; APTL is 5 projects, 22 tumors). Stage 01 stops,
+with a message saying what to change, on the four settings that would
+select more than intended (`select_cohort_projects()`):
 
-| `projects_file` | `include_ucode` | `include_projects` | Selects | Tumors |
-|---|---|---|---|---|
-| null | `[]` | `[]` | every project in the manifests | 212 |
-| null | `[APTL]` | `[]` | every project: the Ucode is ignored | 212 |
-| null | `[]` | APTL list | the list | 22 |
-| workbook | `[]` | `[]` | every project in the workbook | 212 |
-| workbook | `[]` | APTL list | every project in the workbook: the list does not narrow it | 212 |
-| workbook | `[APTL]` | `[]` | the projects with that Ucode | 22 |
-| workbook | `[APTL]` | APTL list | the Ucode projects plus the list | 22 |
-| workbook | `[APTX]` (typo) | `[]` | every project in the manifests | 212 |
+| `projects_file` | `include_ucode` | `include_projects` | Would select | Tumors | Stage 01 |
+|---|---|---|---|---|---|
+| null | `[]` | `[]` | every project in the manifests | 212 | runs |
+| null | `[APTL]` | `[]` | every project: the Ucode is ignored | 212 | stops |
+| null | `[]` | APTL list | the list | 22 | runs |
+| workbook | `[]` | `[]` | every project in the workbook | 212 | stops |
+| workbook | `[]` | APTL list | every project in the workbook: the list does not narrow it | 212 | stops |
+| workbook | `[APTL]` | `[]` | the projects with that Ucode | 22 | runs |
+| workbook | `[APTL]` | APTL list | the Ucode projects plus the list | 22 | runs |
+| workbook | `[APTX]` (typo) | `[]` | every project in the manifests | 212 | stops |
 
-None of the wrong rows stops with an error. Choose exactly one way:
+The first row is allowed on purpose, for a manifest built for one cohort;
+stage 01 then prints `no project filter`. Stage 01 also prints the
+selected `ProjNo` values. Choose exactly one way:
 
 - **By ProjNo (the default).** `include_projects: [the list]`,
   `projects_file: null`, `include_ucode: []`. Nothing else is consulted.
@@ -53,15 +57,16 @@ None of the wrong rows stops with an error. Choose exactly one way:
   `include_projects: []`. First check that every cohort `ProjNo` in the
   manifests has that `Ucode` in the workbook: a project missing from the
   workbook, or listed under another code, is dropped without an error.
+  The guard cannot catch this one.
   `Ucode` is set per project; a suffixed project does not inherit the base
   project's code.
 
-Never set `projects_file` with `include_ucode` empty.
-
 After stage 01, check the result. The stage prints
-`cohort: N samples across P projects`; P must be the number of projects
-in the cohort, and the `ProjNo` column of `results/<run>/tables/cohort.xlsx`
-must hold exactly those projects.
+`cohort projects (P): <ProjNo list>` and
+`cohort: N samples across P projects`. The list must be the cohort's
+projects, and the two P values must match. If the second is smaller, a
+selected project has no rows in the manifests (a mistyped `ProjNo`, or a
+project not yet in the manifests); that is not an error.
 
 ## SNV
 

@@ -152,6 +152,89 @@ read_projects_file <- function(file, include_ucode = NULL) {
   proj
 }
 
+#' Resolve the cohort's project list from the three cohort keys
+#'
+#' The cohort is the union of `include_projects` and the workbook rows whose
+#' `Ucode` is in `include_ucode`; an empty union applies no project filter.
+#' Three settings would silently select far more than intended, so each
+#' stops with a message saying what to change (`docs/METHODS.md`, Cohort
+#' selection):
+#'
+#' * `include_ucode` without a workbook, where it would be ignored;
+#' * a workbook with `include_ucode` empty, which selects every workbook
+#'   project whatever `include_projects` says;
+#' * an `include_ucode` value that matches no workbook row, such as a typo.
+#'
+#' @param include_projects Character vector of `ProjNo`, or `NULL`.
+#' @param include_ucode Character vector of `Ucode` values, or `NULL`.
+#' @param workbook Every row of the projects workbook, from
+#'   `read_projects_file(file)` with no `include_ucode`; `NULL` when
+#'   `cohort.projects_file` is not set.
+#' @return List: `projects`, the sorted `ProjNo` values to keep
+#'   (`character(0)` means every project in the manifests), and `workbook`,
+#'   the selected workbook rows or `NULL`.
+select_cohort_projects <- function(include_projects = NULL, include_ucode = NULL,
+                                   workbook = NULL) {
+  include_projects <- as.character(include_projects)
+  include_ucode <- as.character(include_ucode)
+  see <- "The rule and a table of cases: docs/METHODS.md, Cohort selection."
+
+  if (is.null(workbook) && length(include_ucode) > 0) {
+    wca_stop_user(
+      "cohort.include_ucode is set but cohort.projects_file is null",
+      detail = c(
+        str_glue("include_ucode: {str_c(include_ucode, collapse = ', ')}"),
+        "Without a workbook the codes are ignored, and the cohort would be every project in the manifests.",
+        see
+      ),
+      fix = c(
+        "set cohort.projects_file to the projects workbook",
+        "remove include_ucode and list the projects in cohort.include_projects"
+      )
+    )
+  }
+
+  if (!is.null(workbook) && length(include_ucode) == 0) {
+    wca_stop_user(
+      "cohort.projects_file is set but cohort.include_ucode is empty",
+      detail = c(
+        str_glue("An empty include_ucode selects every project in the workbook ({nrow(workbook)} rows)."),
+        if (length(include_projects) > 0)
+          "include_projects is added to that selection; it cannot narrow it.",
+        see
+      ),
+      fix = c(
+        "set cohort.include_ucode to the cohort's code",
+        "set cohort.projects_file: null and list the projects in cohort.include_projects"
+      )
+    )
+  }
+
+  if (!is.null(workbook)) {
+    known <- sort(unique(as.character(na.omit(workbook$Ucode))))
+    unmatched <- setdiff(include_ucode, known)
+    if (length(unmatched) > 0) {
+      wca_stop_user(
+        "cohort.include_ucode has codes that match no row of the projects workbook",
+        detail = c(
+          str_glue("not in the workbook: {str_c(unmatched, collapse = ', ')}"),
+          "codes in the workbook:",
+          str_c("    ", wca_truncate_list(known)),
+          see
+        ),
+        fix = c(
+          "correct the code in cohort.include_ucode",
+          "add the cohort's projects to the workbook under that code"
+        )
+      )
+    }
+    workbook <- filter(workbook, as.character(Ucode) %in% include_ucode)
+  }
+
+  projects <- sort(unique(c(include_projects, workbook$Project)))
+  list(projects = projects, workbook = workbook)
+}
+
 #' Build the cohort table from the SNV and SV manifests
 #'
 #' One row per tumor. `snv_dir` and `sv_dir` are the per-pair Tempo

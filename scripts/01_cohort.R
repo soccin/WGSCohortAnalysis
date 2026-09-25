@@ -16,13 +16,19 @@ PARAMS <- wca_read_params("00.PARAMS.yml")
 STAGE <- "01_cohort"
 stage_banner(STAGE, PARAMS)
 
-include_projects <- PARAMS$cohort$include_projects
-projects <- NULL
+workbook <- NULL
 if (!is.null(PARAMS$cohort$projects_file)) {
-  projects <- read_projects_file(project_path(PARAMS, PARAMS$cohort$projects_file),
-    include_ucode = PARAMS$cohort$include_ucode)
-  include_projects <- unique(c(include_projects, projects$Project))
-  wca_msg("  projects file: {nrow(projects)} projects selected")
+  workbook <- read_projects_file(project_path(PARAMS, PARAMS$cohort$projects_file))
+}
+selection <- select_cohort_projects(PARAMS$cohort$include_projects,
+  PARAMS$cohort$include_ucode, workbook)
+include_projects <- selection$projects
+projects <- selection$workbook
+if (!is.null(projects)) wca_msg("  projects file: {nrow(projects)} projects selected")
+if (length(include_projects) == 0) {
+  wca_msg("  cohort projects: no project filter, every project in the manifests")
+} else {
+  wca_msg("  cohort projects ({length(include_projects)}): {str_c(include_projects, collapse = ', ')}")
 }
 
 read_side <- function(key) {

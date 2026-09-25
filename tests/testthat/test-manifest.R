@@ -28,6 +28,37 @@ test_that("cohort rules dedup by Sig, exclude by regex and project", {
   expect_equal(apply_cohort_rules(m, include_projects = "2")$TID, "C")
 })
 
+test_that("select_cohort_projects takes the union of the two ways", {
+  wb <- tibble(Project = c("10_A", "10_B", "20_A", "30_A"),
+               Ucode = c("X", "X", "Y", NA))
+  expect_equal(select_cohort_projects()$projects, character(0))
+  expect_null(select_cohort_projects()$workbook)
+  expect_equal(select_cohort_projects(include_projects = c("20_A", "10_A"))$projects,
+    c("10_A", "20_A"))
+  by_code <- select_cohort_projects(include_ucode = "X", workbook = wb)
+  expect_equal(by_code$projects, c("10_A", "10_B"))
+  expect_equal(by_code$workbook$Project, c("10_A", "10_B"))
+  expect_equal(select_cohort_projects("30_A", "X", wb)$projects, c("10_A", "10_B", "30_A"))
+})
+
+test_that("select_cohort_projects stops on settings that fail open", {
+  wb <- tibble(Project = c("10_A", "10_B", "20_A"), Ucode = c("X", "X", "Y"))
+
+  err <- expect_error(select_cohort_projects(include_ucode = "X"),
+    class = "wca_user_error")
+  expect_match(conditionMessage(err), "projects_file is null", fixed = TRUE)
+
+  err <- expect_error(select_cohort_projects(include_projects = "10_A", workbook = wb),
+    class = "wca_user_error")
+  expect_match(conditionMessage(err), "include_ucode is empty", fixed = TRUE)
+  expect_match(conditionMessage(err), "cannot narrow it", fixed = TRUE)
+  expect_error(select_cohort_projects(workbook = wb), class = "wca_user_error")
+
+  err <- expect_error(select_cohort_projects(include_ucode = c("X", "Z"), workbook = wb),
+    class = "wca_user_error")
+  expect_match(conditionMessage(err), "not in the workbook: Z", fixed = TRUE)
+})
+
 test_that("update_manifest adds, updates in place, keeps and reports", {
   old <- tibble(
     TID = c("A", "B", "C", "C", "D"), NID = c("An", "Bn", "Cn", "Cn", "Dn"),
