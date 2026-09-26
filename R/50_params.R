@@ -27,11 +27,62 @@ wca_default_params <- function() {
   )
 }
 
+#' Read a yaml file where only true and false are booleans
+#'
+#' The yaml package follows YAML 1.1, where `y`, `n`, `yes`, `no`, `on` and
+#' `off`, in any case, are booleans. In this toolkit's parameters those are
+#' data: `Y` is tyrosine and a chromosome, `N` is asparagine and an unknown
+#' base, so `ref_aa: Y` would arrive as `TRUE`. Here, as in YAML 1.2, only
+#' `true` and `false` (any case) are logical; every other such word comes
+#' back as the text written.
+#'
+#' @param file Path to the yaml.
+#' @return The parsed yaml.
+wca_read_yaml <- function(file) {
+  text_unless_true_false <- function(x) switch(tolower(x), true = TRUE, false = FALSE, x)
+  yaml::read_yaml(file, handlers = list(
+    "bool#yes" = text_unless_true_false,
+    "bool#no" = text_unless_true_false
+  ))
+}
+
+#' Stop when a logical parameter is not true or false
+#'
+#' Under `wca_read_yaml()` a parameter written `yes` or `on` is text, not
+#' `TRUE`. Code testing it with `isTRUE()` would read that as false without a
+#' word, so every key whose default is logical must come back logical.
+#'
+#' @param p Parameters after merging with the defaults.
+#' @param defaults The matching level of `wca_default_params()`.
+#' @param path Keys above this level, for the message.
+#' @return `p`, invisibly; stops with a `wca_user_error` otherwise.
+check_logical_params <- function(p, defaults = wca_default_params(), path = character()) {
+  purrr::iwalk(defaults, \(d, key) {
+    v <- p[[key]]
+    if (is.list(d) && is.list(v)) {
+      check_logical_params(v, d, c(path, key))
+    } else if (is.logical(d) && !is.null(v) && !(is.logical(v) && length(v) == 1 && !is.na(v))) {
+      name <- str_c(c(path, key), collapse = ".")
+      wca_stop_user(
+        "{name} must be true or false",
+        detail = c(
+          str_glue("00.PARAMS.yml has {name}: {str_c(format(v), collapse = ', ')}"),
+          "Words such as yes, no, on, off, y and n are read as text here, because Y and N are amino acids and bases."
+        ),
+        fix = str_glue("write {name}: true or {name}: false")
+      )
+    }
+  })
+  invisible(p)
+}
+
 #' Read a project's 00.PARAMS.yml
 #'
 #' Missing keys take their defaults; `toolkit` falls back to `WCA_HOME` and
 #' then to the loaded toolkit. Relative paths are kept relative to the
-#' project root (`root`).
+#' project root (`root`). The yaml is read by `wca_read_yaml()`, so only
+#' `true` and `false` are booleans, and a logical parameter written any
+#' other way stops the read (`check_logical_params()`).
 #'
 #' @param file Path to the yaml.
 #' @param root Project root; defaults to the yaml's directory.
@@ -39,8 +90,9 @@ wca_default_params <- function() {
 wca_read_params <- function(file = "00.PARAMS.yml", root = NULL) {
   if (!fs::file_exists(file)) wca_abort("Parameters file not found: {file}")
   root <- root %||% as.character(fs::path_dir(fs::path_abs(file)))
-  raw <- yaml::read_yaml(file)
+  raw <- wca_read_yaml(file)
   p <- modifyList(wca_default_params(), raw, keep.null = TRUE)
+  check_logical_params(p)
   p$root <- root
   if (is.null(p$toolkit) || !nzchar(p$toolkit)) {
     p$toolkit <- Sys.getenv("WCA_HOME", unset = getOption("wca.home", ""))

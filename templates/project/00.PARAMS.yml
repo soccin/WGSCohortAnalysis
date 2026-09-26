@@ -4,6 +4,10 @@
 # project root, stage outputs in cache/<run>/, deliverables in results/<run>/.
 # The parsed-file cache lives in cache/reads/ (outside the run axis) because
 # it is shared by every run.
+#
+# Booleans are true or false. Y, N, yes, no, on and off are read as text
+# (Y is tyrosine and a chromosome, N asparagine), and a true/false key
+# written any other way stops the run.
 
 run: run01                              # run name: cache/<run>/, results/<run>/
 toolkit: /path/to/WGSCohortAnalysis     # filled in by wcaNewProject.R; WCA_HOME wins

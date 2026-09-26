@@ -85,6 +85,17 @@ records which toolkit produced the results.
   `locale = readr::locale()` anywhere, and do not "fix" a column that came
   back as text by calling `parse_number()` on it. `tests/testthat/test-comma-numbers.R`
   guards this.
+- **Never let YAML turn a letter into a boolean.** The yaml package follows
+  YAML 1.1, where `y`, `n`, `yes`, `no`, `on` and `off` are booleans, so
+  `ref_aa: Y` (tyrosine) reads as `TRUE`, `ref_aa: N` (asparagine) as
+  `FALSE`, and `chrom: Y` as `TRUE`. `wca_read_params()` reads through
+  `wca_read_yaml()`, where only `true` and `false` are logical, and stops
+  if a key whose default is logical is written any other way. Read project
+  yaml with these, never with `yaml::read_yaml()`; the one exception is the
+  line in each stage script that finds the toolkit before it is loaded.
+  `yaml::write_yaml()` writes `TRUE` as `yes`: pass
+  `handlers = list(logical = yaml::verbatim_logical)`.
+  `tests/testthat/test-params-yaml.R` guards this.
 
 ## Conventions
 

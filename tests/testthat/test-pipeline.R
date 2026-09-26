@@ -8,11 +8,13 @@ test_that("run_all.R on a project scaffolded from the template completes end to 
 
   sc <- scan_tempo_outputs(fixture_root())
   paths <- manifest_from_scan(sc, fs::path(proj, "data", "raw"), stamp = "test")
-  params <- yaml::read_yaml(fs::path(proj, "00.PARAMS.yml"))
+  params <- wca_read_yaml(fs::path(proj, "00.PARAMS.yml"))
   params$manifests <- list(snv = "data/raw/tempoSNVManifest_test.csv", sv = "data/raw/tempoSVManifest_test.csv")
   params$report$genes_of_interest <- list("TP53", "GATA3", "IKZF2")
   params$report$top_n_oncoprint <- 15
-  yaml::write_yaml(params, fs::path(proj, "00.PARAMS.yml"))
+  # write_yaml() writes TRUE as `yes`, which wca_read_params() rejects.
+  yaml::write_yaml(params, fs::path(proj, "00.PARAMS.yml"),
+    handlers = list(logical = yaml::verbatim_logical))
 
   log <- withr::with_dir(proj, system2("Rscript", "run_all.R", stdout = TRUE, stderr = TRUE))
   status <- attr(log, "status") %||% 0
